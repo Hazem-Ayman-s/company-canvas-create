@@ -7,9 +7,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // Context Provider
 import { ContentProvider } from "@/context/ContentContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 // Landing page
 import Index from "./pages/Index";
+
+// Auth pages
+import Login from "./pages/Login";
 
 // Dashboard pages
 import Dashboard from "./pages/Dashboard";
@@ -28,23 +32,26 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ContentProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/content/hero" element={<HeroEdit />} />
-            <Route path="/dashboard/content/about" element={<AboutEdit />} />
-            <Route path="/dashboard/content/projects" element={<ProjectsEdit />} />
-            <Route path="/dashboard/content/contact" element={<ContactEdit />} />
-            <Route path="/dashboard/pages" element={<PagesManagement />} />
-            <Route path="/dashboard/messages" element={<MessagesManagement />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ContentProvider>
+      <AuthProvider>
+        <ContentProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard/content/hero" element={<HeroEdit />} />
+              <Route path="/dashboard/content/about" element={<AboutEdit />} />
+              <Route path="/dashboard/content/projects" element={<ProjectsEdit />} />
+              <Route path="/dashboard/content/contact" element={<ContactEdit />} />
+              <Route path="/dashboard/pages" element={<PagesManagement />} />
+              <Route path="/dashboard/messages" element={<MessagesManagement />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ContentProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

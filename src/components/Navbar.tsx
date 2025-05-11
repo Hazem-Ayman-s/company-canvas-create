@@ -24,7 +24,7 @@ const Navbar = () => {
             <li><a href="#projects" className="text-gray-700 hover:text-brand-600 font-medium">Projects</a></li>
             <li><a href="#contact" className="text-gray-700 hover:text-brand-600 font-medium">Contact</a></li>
           </ul>
-          <Link to="/dashboard">
+          <Link to="/login">
             <Button variant="outline" className="border-brand-600 text-brand-600 hover:bg-brand-50">
               Admin Login
             </Button>
@@ -78,7 +78,7 @@ const Navbar = () => {
               </li>
               <li>
                 <Link 
-                  to="/dashboard" 
+                  to="/login" 
                   className="block text-lg font-medium text-brand-600"
                   onClick={() => setIsOpen(false)}
                 >

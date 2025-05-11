@@ -1,7 +1,25 @@
 
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import DashboardNav from '@/components/dashboard/DashboardNav';
 
 const Dashboard = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Don't render the dashboard if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardNav />
