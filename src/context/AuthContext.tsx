@@ -81,9 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Check if the user is an admin
       if (data.user) {
-        const isUserAdmin = await checkAdminStatus(data.user.id);
+        await checkAdminStatus(data.user.id);
         
-        if (!isUserAdmin) {
+        if (!isAdmin) {
           // If user is not an admin, sign them out and return false
           await supabase.auth.signOut();
           toast({
