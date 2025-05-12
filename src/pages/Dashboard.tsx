@@ -5,15 +5,15 @@ import { useAuth } from '@/context/AuthContext';
 import DashboardNav from '@/components/dashboard/DashboardNav';
 
 const Dashboard = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to login if not authenticated
+    // Redirect to login if not authenticated or not an admin
     if (!isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isAdmin, navigate]);
 
   // Don't render the dashboard if not authenticated
   if (!isAuthenticated) {

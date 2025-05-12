@@ -9,18 +9,18 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      login: {
+      admin_users: {
         Row: {
-          password: string
-          username: string
+          created_at: string | null
+          id: string
         }
         Insert: {
-          password: string
-          username: string
+          created_at?: string | null
+          id: string
         }
         Update: {
-          password?: string
-          username?: string
+          created_at?: string | null
+          id?: string
         }
         Relationships: []
       }
@@ -29,7 +29,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin_user: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

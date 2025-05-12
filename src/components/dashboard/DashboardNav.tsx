@@ -12,6 +12,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import {
   Collapsible,
   CollapsibleContent,
@@ -20,8 +21,8 @@ import {
 
 const DashboardNav = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const navItems = [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
@@ -39,13 +40,9 @@ const DashboardNav = () => {
     { icon: Mail, label: 'Messages', path: '/dashboard/messages' },
   ];
 
-  const handleLogout = () => {
-    // In a real app, you would handle logout here
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
-  };
-
-  const toggleSection = (section: string) => {
-    setActiveSection(activeSection === section ? null : section);
   };
 
   return (
