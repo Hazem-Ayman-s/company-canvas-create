@@ -48,37 +48,43 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-full max-w-md p-8 space-y-8 glass-morphism rounded-lg">
         <div className="text-center">
-          <div className="mx-auto w-12 h-12 bg-brand-600 rounded-lg flex items-center justify-center">
-            <Lock className="w-6 h-6 text-white" />
+          <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+            <Lock className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold">Admin Login</h1>
-          <p className="mt-2 text-gray-600">Enter your credentials to access the dashboard</p>
+          <h1 className="mt-4 text-2xl font-bold text-foreground">Admin Login</h1>
+          <p className="mt-2 text-muted-foreground">Enter your credentials to access the dashboard</p>
+          <div className="mt-4 text-xs text-muted-foreground p-2 border border-border rounded-md">
+            <p className="mb-1">This is a placeholder login. For production:</p>
+            <p>Connect to Supabase for secure authentication</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username" className="text-foreground">Username</Label>
               <Input 
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Username"
+                className="hover-lift"
                 required
               />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-foreground">Password</Label>
               <Input 
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
+                className="hover-lift"
                 required
               />
             </div>
@@ -86,7 +92,7 @@ const Login = () => {
 
           <Button 
             type="submit" 
-            className="w-full" 
+            className="w-full hover-scale" 
             disabled={isLoading}
           >
             {isLoading ? (
