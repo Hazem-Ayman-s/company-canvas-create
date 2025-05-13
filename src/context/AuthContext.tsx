@@ -77,86 +77,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Special case for our hardcoded admin
-      if (email === "admin@gmail.com" && password === "12345678") {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+      // First try to log in with existing credentials
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-        if (error) {
-          // If the user doesn't exist yet, create it
-          if (error.message.includes("Invalid login credentials")) {
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-              email,
-              password
-            });
-
-            if (signUpError) {
-              toast({
-                variant: "destructive",
-                title: "Error creating admin account",
-                description: signUpError.message,
-              });
-              return false;
-            }
-            
-            // Add the user to the admin_users table
-            if (signUpData.user) {
-              const { error: adminError } = await supabase
-                .from('admin_users')
-                .insert([{ id: signUpData.user.id }]);
-              
-              if (adminError) {
-                console.error('Error adding user to admin_users:', adminError);
-              }
-              
-              setIsAdmin(true);
-              toast({
-                title: "Admin account created",
-                description: "You can now log in with your admin credentials",
-              });
-              
-              // Since we created the user, we need to sign in again
-              const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-                email,
-                password
-              });
-              
-              if (loginError) {
-                toast({
-                  variant: "destructive",
-                  title: "Login failed",
-                  description: loginError.message,
-                });
-                return false;
-              }
-              
-              return true;
-            }
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Login failed",
-              description: error.message,
-            });
-            return false;
-          }
-        }
-
-        // If the email matches our admin, set isAdmin to true
+      // If login worked
+      if (!error) {
+        // Special case for admin@gmail.com
         if (email === "admin@gmail.com") {
           setIsAdmin(true);
           return true;
-        }
-        
-        // For other users, check database
-        if (data.user) {
-          // We need to wait for the admin check to complete before returning
+        } else {
+          // For regular users, check admin status
           const isAdminUser = await checkAdminStatusAndReturn(data.user.id);
-          
           if (!isAdminUser) {
-            // If user is not an admin, sign them out and return false
+            // Not an admin, sign out
             await supabase.auth.signOut();
             toast({
               variant: "destructive",
@@ -165,44 +102,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             return false;
           }
+          return true;
         }
-
-        return true;
-      } else {
-        // Regular login flow for non-hardcoded users
-        const { data, error } = await supabase.auth.signInWithPassword({
+      } 
+      
+      // If login failed and this is for admin@gmail.com, try to create the account
+      if (error && email === "admin@gmail.com") {
+        // Create the admin account
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password
         });
 
-        if (error) {
+        if (signUpError) {
           toast({
             variant: "destructive",
-            title: "Login failed",
-            description: error.message || "Invalid email or password",
+            title: "Error creating admin account",
+            description: signUpError.message,
           });
           return false;
         }
-
-        // Check if the user is an admin
-        if (data.user) {
-          // We need to wait for the admin check to complete before returning
-          const isAdminUser = await checkAdminStatusAndReturn(data.user.id);
+        
+        // Add the user to the admin_users table
+        if (signUpData.user) {
+          const { error: adminError } = await supabase
+            .from('admin_users')
+            .insert([{ id: signUpData.user.id }]);
           
-          if (!isAdminUser) {
-            // If user is not an admin, sign them out and return false
-            await supabase.auth.signOut();
+          if (adminError) {
+            console.error('Error adding user to admin_users:', adminError);
+          }
+          
+          // After creating the account, sign in
+          const { error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          
+          if (loginError) {
             toast({
               variant: "destructive",
-              title: "Access denied",
-              description: "You don't have admin privileges",
+              title: "Login failed",
+              description: loginError.message,
             });
             return false;
           }
+          
+          setIsAdmin(true);
+          return true;
         }
-
-        return true;
+      } else if (error) {
+        // Regular login error
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: error.message,
+        });
+        return false;
       }
+
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       return false;
