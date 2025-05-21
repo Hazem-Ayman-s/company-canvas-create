@@ -1,9 +1,21 @@
 
 import { useContent } from '@/context/ContentContext';
 import { Card, CardContent } from '@/components/ui/card';
+import ContentLoadingIndicator from './ContentLoadingIndicator';
 
 const AboutSection = () => {
-  const { content } = useContent();
+  const { content, loading } = useContent();
+  
+  if (loading) {
+    return (
+      <section id="about" className="section-padding bg-white">
+        <div className="container mx-auto px-4">
+          <ContentLoadingIndicator />
+        </div>
+      </section>
+    );
+  }
+  
   const { title, description, vision, values } = content.about;
 
   return (

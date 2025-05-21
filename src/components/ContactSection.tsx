@@ -7,10 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import ContentLoadingIndicator from './ContentLoadingIndicator';
 
 const ContactSection = () => {
-  const { content } = useContent();
-  const { title, subtitle, address, email, phone } = content.contact;
+  const { content, loading } = useContent();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -61,6 +61,18 @@ const ContactSection = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <section id="contact" className="section-padding bg-white">
+        <div className="container mx-auto px-4">
+          <ContentLoadingIndicator />
+        </div>
+      </section>
+    );
+  }
+  
+  const { title, subtitle, address, email, phone } = content.contact;
 
   return (
     <section id="contact" className="section-padding bg-white">

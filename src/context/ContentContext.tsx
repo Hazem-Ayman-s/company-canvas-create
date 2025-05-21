@@ -1,8 +1,45 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from '@/components/ui/use-toast';
 
-// Default content
-const defaultContent = {
+// Default content structure (for TypeScript typing)
+interface ContentType {
+  hero: {
+    title: string;
+    subtitle: string;
+    ctaText: string;
+  };
+  about: {
+    title: string;
+    description: string;
+    vision: string;
+    values: {
+      title: string;
+      description: string;
+    }[];
+  };
+  projects: {
+    title: string;
+    subtitle: string;
+    items: {
+      title: string;
+      description: string;
+      image: string;
+      category: string;
+    }[];
+  };
+  contact: {
+    title: string;
+    subtitle: string;
+    address: string;
+    email: string;
+    phone: string;
+  };
+}
+
+// Default content (used as fallback if database fetch fails)
+const defaultContent: ContentType = {
   hero: {
     title: "Innovate. Transform. Succeed.",
     subtitle: "We build cutting-edge solutions that help businesses grow and thrive in the digital age.",
@@ -51,7 +88,7 @@ const defaultContent = {
   },
   contact: {
     title: "Get in Touch",
-    subtitle: "Have a project in mind? We'd love to hear from you.",
+    subtitle: "Have a project in mind? We love to hear from you.",
     address: "123 Business Avenue, Suite 200, San Francisco, CA 94103",
     email: "info@acmeinc.com",
     phone: "(555) 123-4567"
@@ -60,48 +97,109 @@ const defaultContent = {
 
 // Create the content context
 interface ContentContextType {
-  content: typeof defaultContent;
-  updateContent: (section: string, data: any) => void;
+  content: ContentType;
+  updateContent: (section: string, data: any) => Promise<void>;
+  loading: boolean;
+  error: string | null;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 // Provider component
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [content, setContent] = useState(defaultContent);
+  const [content, setContent] = useState<ContentType>(defaultContent);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load content from localStorage on mount
-  useEffect(() => {
-    const savedContent = localStorage.getItem('siteContent');
-    if (savedContent) {
-      try {
-        setContent(JSON.parse(savedContent));
-      } catch (e) {
-        console.error('Failed to parse saved content:', e);
+  // Function to fetch content from Supabase
+  const fetchContent = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('website_content')
+        .select('section_name, content');
+      
+      if (error) {
+        throw error;
       }
+
+      if (data && data.length > 0) {
+        // Convert array of section objects to a single content object
+        const contentFromDb: Partial<ContentType> = {};
+        
+        data.forEach((item) => {
+          const sectionName = item.section_name as keyof ContentType;
+          contentFromDb[sectionName] = item.content as any;
+        });
+        
+        // Merge with default content to ensure all fields exist even if some sections are missing in DB
+        setContent({
+          ...defaultContent,
+          ...contentFromDb
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching content:", err);
+      setError("Failed to load content from database. Using default content instead.");
+      // Fall back to default content (already in state)
+      toast({
+        variant: "destructive",
+        title: "Content loading error",
+        description: "Failed to load content from database. Using default content instead."
+      });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Load content from Supabase on mount
+  useEffect(() => {
+    fetchContent();
   }, []);
 
-  // Update content and save to localStorage
-  const updateContent = (section: string, data: any) => {
-    setContent(prev => {
-      const updated = {
+  // Update content in Supabase
+  const updateContent = async (section: string, data: any) => {
+    try {
+      // Update state first for immediate UI feedback
+      setContent(prev => ({
         ...prev,
         [section]: {
-          ...prev[section as keyof typeof prev],
+          ...prev[section as keyof ContentType],
           ...data
         }
-      };
+      }));
       
-      // Save to localStorage
-      localStorage.setItem('siteContent', JSON.stringify(updated));
+      // Update database
+      const { error } = await supabase
+        .from('website_content')
+        .update({ content: data, updated_at: new Date().toISOString() })
+        .eq('section_name', section);
       
-      return updated;
-    });
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Content updated",
+        description: `${section} section has been successfully updated.`
+      });
+    } catch (err: any) {
+      console.error("Error updating content:", err);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: err.message || "Failed to update content in the database."
+      });
+      
+      // Refresh content to ensure UI consistency
+      fetchContent();
+    }
   };
 
   return (
-    <ContentContext.Provider value={{ content, updateContent }}>
+    <ContentContext.Provider value={{ content, updateContent, loading, error }}>
       {children}
     </ContentContext.Provider>
   );

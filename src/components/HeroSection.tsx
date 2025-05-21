@@ -2,9 +2,21 @@
 import { useContent } from '@/context/ContentContext';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import ContentLoadingIndicator from './ContentLoadingIndicator';
 
 const HeroSection = () => {
-  const { content } = useContent();
+  const { content, loading } = useContent();
+  
+  if (loading) {
+    return (
+      <section className="pt-28 pb-16 md:pt-32 md:pb-20 lg:pt-40 lg:pb-28 hero-gradient text-white">
+        <div className="container mx-auto px-4">
+          <ContentLoadingIndicator />
+        </div>
+      </section>
+    );
+  }
+  
   const { title, subtitle, ctaText } = content.hero;
 
   return (

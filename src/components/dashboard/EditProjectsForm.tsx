@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Loader2 } from 'lucide-react';
 
 const EditProjectsForm = () => {
-  const { content, updateContent } = useContent();
+  const { content, updateContent, loading } = useContent();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -18,6 +18,19 @@ const EditProjectsForm = () => {
     subtitle: content.projects.subtitle,
     items: [...content.projects.items],
   });
+  
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Update local form state when content is loaded/changed
+  useEffect(() => {
+    if (!loading) {
+      setFormData({
+        title: content.projects.title,
+        subtitle: content.projects.subtitle,
+        items: [...content.projects.items],
+      });
+    }
+  }, [content.projects, loading]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -51,14 +64,33 @@ const EditProjectsForm = () => {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateContent('projects', formData);
-    toast({
-      title: "Projects section updated!",
-      description: "The changes have been saved successfully.",
-    });
+    setIsSaving(true);
+    
+    try {
+      await updateContent('projects', formData);
+      toast({
+        title: "Projects section updated!",
+        description: "The changes have been saved to the database.",
+      });
+    } catch (error) {
+      console.error('Error updating projects section:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
+  
+  if (loading) {
+    return (
+      <Card className="p-6 flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-600 mx-auto mb-4" />
+          <p className="text-gray-500">Loading content...</p>
+        </div>
+      </Card>
+    );
+  }
   
   return (
     <Card className="p-6">
@@ -155,7 +187,18 @@ const EditProjectsForm = () => {
           ))}
         </div>
         
-        <Button type="submit" className="w-full">Save Changes</Button>
+        <Button 
+          type="submit" 
+          className="w-full"
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : 'Save Changes'}
+        </Button>
       </form>
     </Card>
   );

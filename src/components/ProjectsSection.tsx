@@ -2,9 +2,21 @@
 import { useContent } from '@/context/ContentContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import ContentLoadingIndicator from './ContentLoadingIndicator';
 
 const ProjectsSection = () => {
-  const { content } = useContent();
+  const { content, loading } = useContent();
+  
+  if (loading) {
+    return (
+      <section id="projects" className="section-padding bg-gray-50">
+        <div className="container mx-auto px-4">
+          <ContentLoadingIndicator />
+        </div>
+      </section>
+    );
+  }
+  
   const { title, subtitle, items } = content.projects;
 
   return (

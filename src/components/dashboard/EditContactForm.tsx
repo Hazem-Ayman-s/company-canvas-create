@@ -1,14 +1,15 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 const EditContactForm = () => {
-  const { content, updateContent } = useContent();
+  const { content, updateContent, loading } = useContent();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -19,19 +20,53 @@ const EditContactForm = () => {
     phone: content.contact.phone,
   });
   
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Update local form state when content is loaded/changed
+  useEffect(() => {
+    if (!loading) {
+      setFormData({
+        title: content.contact.title,
+        subtitle: content.contact.subtitle,
+        address: content.contact.address,
+        email: content.contact.email,
+        phone: content.contact.phone,
+      });
+    }
+  }, [content.contact, loading]);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateContent('contact', formData);
-    toast({
-      title: "Contact section updated!",
-      description: "The changes have been saved successfully.",
-    });
+    setIsSaving(true);
+    
+    try {
+      await updateContent('contact', formData);
+      toast({
+        title: "Contact section updated!",
+        description: "The changes have been saved to the database.",
+      });
+    } catch (error) {
+      console.error('Error updating contact section:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
+  
+  if (loading) {
+    return (
+      <Card className="p-6 flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-600 mx-auto mb-4" />
+          <p className="text-gray-500">Loading content...</p>
+        </div>
+      </Card>
+    );
+  }
   
   return (
     <Card className="p-6">
@@ -92,7 +127,18 @@ const EditContactForm = () => {
           />
         </div>
         
-        <Button type="submit" className="w-full">Save Changes</Button>
+        <Button 
+          type="submit" 
+          className="w-full"
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : 'Save Changes'}
+        </Button>
       </form>
     </Card>
   );
