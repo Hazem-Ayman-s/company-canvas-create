@@ -1,19 +1,49 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import DashboardNav from '@/components/dashboard/DashboardNav';
+import { supabase } from '@/integrations/supabase/client';
+import { Mail } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const Dashboard = () => {
   const { isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Redirect to login if not authenticated or not an admin
+    // Redirect to login if not authenticated
     if (!isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, isAdmin, navigate]);
+
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('contact_messages')
+          .select('id')
+          .eq('read', false);
+          
+        if (error) {
+          throw error;
+        }
+        
+        setUnreadCount(data?.length || 0);
+      } catch (error) {
+        console.error('Error fetching unread messages:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (isAuthenticated) {
+      fetchUnreadMessages();
+    }
+  }, [isAuthenticated]);
 
   // Don't render the dashboard if not authenticated
   if (!isAuthenticated) {
@@ -80,8 +110,14 @@ const Dashboard = () => {
                 <li className="text-brand-600 hover:underline">
                   <a href="/dashboard/pages">Manage Pages</a>
                 </li>
-                <li className="text-brand-600 hover:underline">
+                <li className="text-brand-600 hover:underline flex items-center gap-2">
                   <a href="/dashboard/messages">Check Messages</a>
+                  {!isLoading && unreadCount > 0 && (
+                    <Badge variant="destructive" className="px-2 py-0.5 text-xs">
+                      <Mail className="h-3 w-3 mr-1" />
+                      {unreadCount} new
+                    </Badge>
+                  )}
                 </li>
               </ul>
             </div>
