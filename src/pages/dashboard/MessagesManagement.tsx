@@ -11,10 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Eye, Trash2, Mail } from 'lucide-react';
+import { ArrowLeft, Eye, Trash2, Mail, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import ContentLoadingIndicator from '@/components/ContentLoadingIndicator';
 
 type Message = {
   id: string;
@@ -29,6 +31,7 @@ const MessagesManagement = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const fetchMessages = async () => {
@@ -72,28 +75,35 @@ const MessagesManagement = () => {
     }).format(date);
   };
 
-  const markAsRead = async (id: string) => {
+  const toggleReadStatus = async (id: string, currentReadStatus: boolean) => {
+    setSavingIds(prev => {
+      const updated = new Set(prev);
+      updated.add(id);
+      return updated;
+    });
+
     try {
       const { error } = await supabase
         .from('contact_messages')
-        .update({ read: true })
+        .update({ read: !currentReadStatus })
         .eq('id', id);
       
       if (error) {
         throw error;
       }
       
+      // Update local state
       setMessages(prev => 
         prev.map(msg => 
-          msg.id === id ? { ...msg, read: true } : msg
+          msg.id === id ? { ...msg, read: !currentReadStatus } : msg
         )
       );
       
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount(prev => currentReadStatus ? prev + 1 : Math.max(0, prev - 1));
       
       toast({
-        title: "Message marked as read",
-        description: "The message has been marked as read.",
+        title: currentReadStatus ? "Message marked as unread" : "Message marked as read",
+        description: `The message has been marked as ${currentReadStatus ? 'unread' : 'read'}.`,
       });
     } catch (error) {
       console.error('Error updating message:', error);
@@ -101,6 +111,12 @@ const MessagesManagement = () => {
         variant: "destructive",
         title: "Update failed",
         description: "There was a problem updating the message status.",
+      });
+    } finally {
+      setSavingIds(prev => {
+        const updated = new Set(prev);
+        updated.delete(id);
+        return updated;
       });
     }
   };
@@ -172,13 +188,14 @@ const MessagesManagement = () => {
           
           <Card className="overflow-hidden">
             {loading ? (
-              <div className="py-8 text-center text-gray-500">Loading messages...</div>
+              <ContentLoadingIndicator message="Loading messages..." className="py-10" />
             ) : messages.length === 0 ? (
               <div className="py-8 text-center text-gray-500">No messages found</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">Read</TableHead>
                     <TableHead className="w-[180px]">Name</TableHead>
                     <TableHead>Message</TableHead>
                     <TableHead className="w-[150px]">Date</TableHead>
@@ -188,6 +205,13 @@ const MessagesManagement = () => {
                 <TableBody>
                   {messages.map((message) => (
                     <TableRow key={message.id} className={!message.read ? "bg-blue-50" : ""}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={message.read}
+                          onCheckedChange={() => toggleReadStatus(message.id, message.read)}
+                          disabled={savingIds.has(message.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div>
                           {!message.read && (
@@ -205,15 +229,20 @@ const MessagesManagement = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            title="Mark as Read"
-                            onClick={() => !message.read && markAsRead(message.id)}
-                            disabled={message.read}
-                          >
-                            <Eye className={`h-4 w-4 ${message.read ? 'text-gray-400' : 'text-blue-500'}`} />
-                          </Button>
+                          {savingIds.has(message.id) ? (
+                            <Button variant="ghost" size="icon" disabled>
+                              <Check className="h-4 w-4 animate-spin" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              title={message.read ? "Mark as Unread" : "Mark as Read"}
+                              onClick={() => toggleReadStatus(message.id, message.read)}
+                            >
+                              <Eye className={`h-4 w-4 ${message.read ? 'text-gray-400' : 'text-blue-500'}`} />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="icon" 
