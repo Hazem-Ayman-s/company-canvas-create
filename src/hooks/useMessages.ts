@@ -22,6 +22,7 @@ export const useMessages = () => {
         throw error;
       }
       
+      console.log('Fetched messages:', data);
       setMessages(data || []);
       setUnreadCount(data?.filter(msg => !msg.read).length || 0);
     } catch (error) {

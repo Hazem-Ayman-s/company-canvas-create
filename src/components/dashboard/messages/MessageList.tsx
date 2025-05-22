@@ -134,10 +134,12 @@ const MessageList = ({ messages, loading, onMessageUpdate }: MessageListProps) =
     return <ContentLoadingIndicator message="Loading messages..." className="py-10" />;
   }
 
-  if (messages.length === 0) {
+  if (!messages || messages.length === 0) {
     return <div className="py-8 text-center text-gray-500">No messages found</div>;
   }
 
+  console.log('Rendering messages:', messages);
+  
   return (
     <Table>
       <TableHeader>
